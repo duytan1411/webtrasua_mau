@@ -1,0 +1,3295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IMT Milk Tea - Hệ thống Đặt Trà Sữa Sinh Viên</title>
+  <style>
+    :root {
+      --iuh-blue-dark: #0e2476;
+      --iuh-blue: #16329c;
+      --iuh-blue-light: #1e45c8;
+      --iuh-teal: #0b699e;
+      --iuh-gold: #f7b500;
+      --iuh-gold-dark: #df9f00;
+      --text-dark: #1a2238;
+      --text-muted: #5a647e;
+      --bg-light: #f4f7fc;
+      --white: #ffffff;
+      --border: #dde3f0;
+      --danger: #d93025;
+      --success: #188038;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-dark);
+      line-height: 1.5;
+      overflow-x: hidden;
+    }
+
+    /* =====================================================
+       0. CỔNG ĐĂNG NHẬP / ĐĂNG KÝ SINH VIÊN (AUTH PORTAL)
+       ===================================================== */
+    .auth-portal-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(14, 36, 118, 0.94) 0%, rgba(10, 22, 66, 0.98) 100%);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: opacity 0.3s ease;
+    }
+
+    .auth-portal-overlay.hidden {
+      display: none;
+    }
+
+    .auth-card {
+      background: var(--white);
+      border-radius: 18px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+      border: 3px solid var(--iuh-gold);
+      overflow: hidden;
+      animation: zoomIn 0.25s ease;
+    }
+
+    @keyframes zoomIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .auth-header {
+      background: linear-gradient(90deg, #102783 0%, #16329c 100%);
+      color: var(--white);
+      padding: 24px 24px 18px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .auth-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .auth-title {
+      font-size: 19px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      color: var(--white);
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 4px;
+    }
+
+    .auth-tabs {
+      display: flex;
+      background: #eef2f9;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .auth-tab-btn.active {
+      color: var(--iuh-blue);
+      background: var(--white);
+      border-bottom: 3px solid var(--iuh-gold);
+    }
+
+    .auth-body {
+      padding: 22px 24px 26px 24px;
+    }
+
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+      animation: authFormFade 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes authFormFade {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-group {
+      margin-bottom: 14px;
+    }
+
+    .auth-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 5px;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .auth-input:focus {
+      border-color: var(--iuh-blue);
+      box-shadow: 0 0 0 3px rgba(22, 50, 156, 0.12);
+    }
+
+    .auth-alert {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .auth-alert.error {
+      display: block;
+      background: #fde8e8;
+      color: var(--danger);
+      border: 1px solid rgba(217, 48, 37, 0.3);
+    }
+
+    .auth-alert.success {
+      display: block;
+      background: #e6f4ea;
+      color: var(--success);
+      border: 1px solid rgba(24, 128, 56, 0.3);
+    }
+
+    .btn-auth-submit {
+      width: 100%;
+      padding: 12px;
+      background: var(--iuh-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-auth-submit:hover {
+      background: var(--iuh-gold);
+      color: var(--iuh-blue-dark);
+    }
+
+
+
+    /* =====================================================
+       1. TOP UTILITY BAR (GIỐNG ẢNH MẪU IUH)
+       ===================================================== */
+    .topbar {
+      background: linear-gradient(90deg, #102783 0%, #1836a6 100%);
+      color: var(--white);
+      font-size: 13.5px;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .topbar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .topbar-welcome {
+      font-weight: 400;
+      letter-spacing: 0.1px;
+    }
+
+    .topbar-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .topbar-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--white);
+      text-decoration: none;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .topbar-link:hover {
+      opacity: 0.85;
+    }
+
+    .topbar-link svg {
+      width: 15px;
+      height: 15px;
+      fill: var(--iuh-gold);
+      flex-shrink: 0;
+    }
+
+    .topbar-divider {
+      width: 1px;
+      height: 16px;
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .user-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.16);
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(247, 181, 0, 0.4);
+      color: var(--white);
+      font-size: 13px;
+    }
+
+    .user-pill-badge strong {
+      color: var(--iuh-gold);
+    }
+
+    .btn-logout-small {
+      background: rgba(217, 48, 37, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      color: var(--white);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-logout-small:hover {
+      background: var(--danger);
+    }
+
+    .db-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      transition: all 0.2s ease;
+    }
+
+    .db-status-pill.online {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      color: #34d399;
+    }
+
+    .db-status-pill.online .db-status-dot {
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+
+    .db-status-pill.offline {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fbbf24;
+    }
+
+    .db-status-pill.offline .db-status-dot {
+      background: #f59e0b;
+      box-shadow: 0 0 8px #f59e0b;
+    }
+
+    .db-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .lang-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--white);
+      color: var(--iuh-blue);
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 3px 10px 3px 5px;
+      border-radius: 999px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+
+    .topbar-admin-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(247, 181, 0, 0.18);
+      border: 1px solid rgba(247, 181, 0, 0.5);
+      color: var(--iuh-gold);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .topbar-admin-btn:hover {
+      background: var(--iuh-gold);
+      color: var(--navy-deep);
+      transform: translateY(-1px);
+    }
+
+    .vn-flag {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #da251d;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .vn-flag svg {
+      width: 11px;
+      height: 11px;
+      fill: #ffff00;
+    }
+
+    /* =====================================================
+       2. MAIN HEADER & LOGO IMT (PHONG CÁCH HÌNH HỌC XANH - VÀNG)
+       ===================================================== */
+    .main-header {
+      background: var(--white);
+      box-shadow: 0 3px 12px rgba(14, 36, 118, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .brand-emblem-imt {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.18;
+      color: var(--iuh-blue);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .brand-text span:first-child {
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      color: var(--iuh-blue-dark);
+    }
+
+    .nav-tabs {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--iuh-blue);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 6px;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .nav-tab-btn:hover {
+      background: rgba(22, 50, 156, 0.06);
+      color: var(--iuh-blue-dark);
+    }
+
+    .nav-tab-btn.active {
+      color: var(--iuh-blue-dark);
+      background: rgba(247, 181, 0, 0.14);
+    }
+
+    .nav-tab-btn.active::after {
+      content: "";
+      position: absolute;
+      bottom: 2px;
+      left: 16px;
+      right: 16px;
+      height: 3px;
+      background: var(--iuh-gold);
+      border-radius: 2px;
+    }
+
+    .nav-chevron {
+      font-size: 11px;
+      opacity: 0.75;
+    }
+
+    .tab-badge {
+      background: var(--iuh-gold);
+      color: var(--iuh-blue-dark);
+      font-size: 11.5px;
+      font-weight: 800;
+      padding: 1px 7px;
+      border-radius: 999px;
+      margin-left: 2px;
+    }
+
+    /* =====================================================
+       3. HERO BANNER (CHUẨN GIAO DIỆN MẪU IUH - ĐỔI TÊN IMT)
+       ===================================================== */
+    .hero-banner {
+      position: relative;
+      background: linear-gradient(125deg, #0b1e6d 0%, #1635a4 55%, #0d2785 100%);
+      color: var(--white);
+      min-height: 410px;
+      overflow: hidden;
+      border-bottom: 4px solid var(--iuh-gold);
+    }
+
+    .hero-banner::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 45% 20%, rgba(247, 181, 0, 0.08) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .hero-slider-wrap {
+      position: relative;
+      width: 100%;
+      min-height: 410px;
+      overflow: hidden;
+    }
+
+    /* Track lướt ngang mượt mà, chuyển động chậm 1.35 giây siêu mượt */
+    .hero-slider-track {
+      display: flex;
+      width: 400%;
+      transition: transform 1.35s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .hero-slide {
+      width: 25%;
+      flex-shrink: 0;
+      min-height: 410px;
+      opacity: 0.45;
+      transform: scale(0.985);
+      transition: transform 1.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .hero-slide.active {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* Hiệu ứng trượt và xuất hiện so le (Staggered Animation) cho các phần tử bên trong slide đang active */
+    .hero-slide.active .hero-kicker {
+      animation: heroSlideText 0.8s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-slide.active .hero-script-line {
+      animation: heroSlideText 0.8s 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-slide.active .hero-upper-line {
+      animation: heroSlideText 0.8s 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-slide.active .hero-big-number {
+      animation: heroZoomBig 1s 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+
+    .hero-slide.active .hero-footnote {
+      animation: heroSlideText 0.8s 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-slide.active .hero-dark-card {
+      animation: heroPopCard 0.9s 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both, dealFloat 3.5s 1.6s ease-in-out infinite alternate;
+    }
+
+    .hero-slide.active .showcase-card {
+      animation: heroShowcaseFade 1s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    @keyframes dealFloat {
+      0% {
+        transform: translateY(0);
+      }
+      100% {
+        transform: translateY(-6px);
+      }
+    }
+
+    @keyframes heroSlideText {
+      from {
+        opacity: 0;
+        transform: translateY(22px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes heroZoomBig {
+      from {
+        opacity: 0;
+        transform: scale(0.7) translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes heroPopCard {
+      from {
+        opacity: 0;
+        transform: scale(0.85) translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes heroShowcaseFade {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.94);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .hero-arrow-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(10, 24, 78, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      z-index: 10;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .hero-arrow-btn:hover {
+      background: var(--iuh-gold);
+      color: var(--iuh-blue-dark);
+      border-color: var(--iuh-gold);
+    }
+
+    .hero-arrow-btn.prev {
+      left: 18px;
+    }
+
+    .hero-arrow-btn.next {
+      right: 18px;
+    }
+
+    .hero-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.25fr 0.95fr;
+      min-height: 410px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-left {
+      padding: 34px 24px 52px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 3;
+    }
+
+    .hero-partner-row {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .the-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .the-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #ff2a6d 0%, #ff7b00 50%, #7928ca 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 15px;
+      color: var(--white);
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(255, 42, 109, 0.35);
+    }
+
+    .the-label {
+      font-size: 12.5px;
+      line-height: 1.2;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .hero-sub-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-left: 1px solid rgba(255, 255, 255, 0.25);
+      padding-left: 20px;
+    }
+
+    .hero-sub-brand-text {
+      font-size: 13px;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    .hero-kicker {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+
+    .hero-kicker span {
+      color: var(--iuh-gold);
+    }
+
+    .hero-main-row {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .hero-headline-block {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero-script-line {
+      font-size: 28px;
+      color: var(--iuh-gold);
+      font-family: "Georgia", "Times New Roman", serif;
+      font-style: italic;
+      margin-bottom: 2px;
+    }
+
+    .hero-script-line strong {
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-style: normal;
+      color: var(--white);
+      font-size: 32px;
+      font-weight: 900;
+      margin-left: 6px;
+    }
+
+    .hero-upper-line {
+      font-size: 27px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      margin-bottom: -6px;
+    }
+
+    .hero-big-number {
+      font-size: 76px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -1px;
+      color: var(--white);
+      position: relative;
+      display: inline-block;
+      margin: 4px 0 6px 0;
+      text-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .hero-big-number sup {
+      font-size: 40px;
+      top: -24px;
+    }
+
+    .hero-number-caption {
+      position: relative;
+      display: inline-block;
+      font-family: "Georgia", serif;
+      font-style: italic;
+      font-size: 23px;
+      color: var(--white);
+      margin-left: -18px;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+
+    .hero-glow-line {
+      height: 3px;
+      width: 260px;
+      background: linear-gradient(90deg, transparent, var(--iuh-gold), transparent);
+      margin: 4px 0 8px 0;
+    }
+
+    .hero-footnote {
+      font-size: 12.5px;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .hero-dark-card {
+      background: #141416;
+      border-radius: 18px;
+      padding: 18px 22px;
+      min-width: 195px;
+      box-shadow:
+        0 0 0 2px rgba(255, 65, 130, 0.65),
+        0 12px 28px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .hero-dark-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .hero-dark-card-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .hero-dark-mini-badge {
+      background: linear-gradient(135deg, #ff2a6d, #ff8a00);
+      color: var(--white);
+      font-weight: 800;
+      font-size: 11px;
+      padding: 4px 6px;
+      border-radius: 5px;
+    }
+
+    .hero-dark-mini-text {
+      font-size: 10.5px;
+      color: rgba(255, 255, 255, 0.8);
+      line-height: 1.2;
+    }
+
+    .hero-dark-title {
+      font-size: 27px;
+      font-weight: 900;
+      color: var(--white);
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .hero-dark-sub {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--iuh-gold);
+      text-align: center;
+      margin-top: 4px;
+      letter-spacing: 0.6px;
+    }
+
+    .hero-right {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 360px;
+    }
+
+    .hero-curve-svg {
+      position: absolute;
+      left: -1px;
+      top: 0;
+      height: 100%;
+      width: 140px;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .hero-Right-showcase {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(145deg, #d7f0f7 0%, #b8e2f2 45%, #fef3c7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 24px 24px 85px;
+    }
+
+    .showcase-card {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(6px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 14px 34px rgba(14, 36, 118, 0.18);
+      border: 2px solid var(--white);
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+    }
+
+    .showcase-tag {
+      display: inline-block;
+      background: var(--iuh-blue);
+      color: var(--white);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+    }
+
+    .showcase-title {
+      color: var(--iuh-blue-dark);
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .showcase-desc {
+      color: var(--text-muted);
+      font-size: 12.5px;
+      margin-bottom: 12px;
+    }
+
+    .hero-dots {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .hero-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .hero-dot.active {
+      width: 38px;
+      background: var(--iuh-gold);
+      box-shadow: 0 0 14px rgba(247, 181, 0, 0.85);
+      transform: none;
+    }
+
+    /* =====================================================
+       4. KHU VỰC NỘI DUNG 3 TAB
+       ===================================================== */
+    .main-container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 24px 64px 24px;
+    }
+
+    .tab-panel {
+      display: none;
+      animation: fadeIn 0.22s ease;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 22px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .section-head-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-accent-bar {
+      width: 6px;
+      height: 28px;
+      background: var(--iuh-gold);
+      border-radius: 3px;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--iuh-blue-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .section-subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-input {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13.5px;
+      min-width: 240px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--iuh-blue);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .drink-card {
+      background: var(--white);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+      box-shadow: 0 3px 10px rgba(14, 36, 118, 0.05);
+    }
+
+    .drink-card:hover {
+      transform: translateY(-8px) scale(1.015);
+      box-shadow: 0 16px 36px rgba(14, 36, 118, 0.15);
+      border-color: var(--iuh-blue-light);
+    }
+
+    .drink-visual svg {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .drink-card:hover .drink-visual svg {
+      transform: scale(1.1) rotate(-1.5deg);
+    }
+
+    .drink-visual {
+      height: 155px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 14px;
+    }
+
+    .drink-price-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: var(--iuh-blue-dark);
+      color: var(--iuh-gold);
+      font-weight: 800;
+      font-size: 13.5px;
+      padding: 4px 11px;
+      border-radius: 999px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .drink-tag-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--iuh-blue);
+      font-weight: 700;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 999px;
+    }
+
+    .drink-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .drink-name {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: var(--iuh-blue-dark);
+      margin-bottom: 6px;
+    }
+
+    .drink-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      line-height: 1.45;
+    }
+
+    .btn-order-now {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--iuh-blue);
+      color: var(--white);
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-order-now:hover {
+      background: var(--iuh-gold);
+      color: var(--iuh-blue-dark);
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--white);
+      color: var(--iuh-blue);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--iuh-blue);
+      color: var(--white);
+      border-color: var(--iuh-blue);
+    }
+
+    .btn-danger {
+      color: var(--danger);
+      border-color: rgba(217, 48, 37, 0.35);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: var(--white);
+      border-color: var(--danger);
+    }
+
+    .toast-notice {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #e6f4ea;
+      border-left: 5px solid var(--success);
+      color: #137333;
+      padding: 14px 18px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 700;
+      box-shadow: 0 6px 18px rgba(19, 115, 51, 0.12);
+      animation: toastSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes toastSlide {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =====================================================
+       5. THỐNG KÊ & BẢNG DỮ LIỆU (TAB 2 & TAB 3)
+       ===================================================== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border-radius: 12px;
+      padding: 18px 20px;
+      border: 1px solid var(--border);
+      border-top: 4px solid var(--iuh-blue);
+      box-shadow: 0 3px 10px rgba(14, 36, 118, 0.04);
+    }
+
+    .stat-card.gold {
+      border-top-color: var(--iuh-gold);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--iuh-blue-dark);
+    }
+
+    .card-box {
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 22px;
+      box-shadow: 0 3px 10px rgba(14, 36, 118, 0.04);
+    }
+
+    .card-box-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--iuh-blue-dark);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+    }
+
+    th, td {
+      padding: 11px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background: #f0f4fb;
+      color: var(--iuh-blue-dark);
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.3px;
+      white-space: nowrap;
+    }
+
+    tr:hover td {
+      background-color: #f9fbff;
+    }
+
+    .pill-tag {
+      display: inline-block;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(22, 50, 156, 0.08);
+      color: var(--iuh-blue);
+    }
+
+    .pill-gold {
+      background: rgba(247, 181, 0, 0.2);
+      color: #8a6100;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-muted);
+      font-size: 14.5px;
+      font-weight: 600;
+    }
+
+    /* =====================================================
+       6. POPUP MODAL ĐẶT MÓN (ORDER)
+       ===================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 22, 66, 0.6);
+      backdrop-filter: blur(3px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 200;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-dialog {
+      background: var(--white);
+      border-radius: 16px;
+      max-width: 520px;
+      width: 100%;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      border: 2px solid var(--iuh-gold);
+      animation: modalSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    @keyframes modalSlideIn {
+      from { transform: translateY(-18px) scale(0.95); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+
+    .modal-header {
+      background: linear-gradient(90deg, var(--iuh-blue-dark), var(--iuh-blue));
+      color: var(--white);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: var(--white);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .selected-drink-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f0f4fb;
+      border-left: 4px solid var(--iuh-gold);
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .selected-drink-name {
+      font-weight: 800;
+      color: var(--iuh-blue-dark);
+      font-size: 15.5px;
+    }
+
+    .selected-drink-price {
+      font-weight: 800;
+      color: var(--iuh-blue);
+      font-size: 15px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 5px;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--iuh-blue);
+    }
+
+    .form-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .error-text {
+      color: var(--danger);
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-submit-order {
+      background: var(--iuh-blue);
+      color: var(--white);
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-submit-order:hover {
+      background: var(--iuh-gold);
+      color: var(--iuh-blue-dark);
+    }
+
+    .floating-help-btn {
+      position: fixed;
+      bottom: 22px;
+      left: 22px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #4e6fae;
+      color: var(--white);
+      border: 4px solid rgba(78, 111, 174, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(14, 36, 118, 0.25);
+      z-index: 90;
+    }
+
+    @media (max-width: 1024px) {
+      .menu-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .hero-inner {
+        grid-template-columns: 1fr;
+      }
+      .hero-right {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .menu-grid,
+      .stats-grid,
+      .form-row-3 {
+        grid-template-columns: 1fr;
+      }
+      .hero-big-number {
+        font-size: 56px;
+      }
+      .header-inner {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .nav-tabs {
+        width: 100%;
+      }
+      .nav-tab-btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 12px;
+        padding: 9px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =====================================================
+       0. CỔNG ĐĂNG NHẬP / ĐĂNG KÝ BẰNG MÃ SỐ SINH VIÊN (MSSV)
+       ===================================================== -->
+  <div id="auth-portal" class="auth-portal-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-brand">
+          <!-- Logo IMT Mini -->
+          <svg viewBox="0 0 68 56" width="40" height="34">
+            <rect x="2" y="10" width="8" height="36" rx="2" fill="#ffffff"/>
+            <polygon points="6,2 10,8 2,8" fill="#f7b500"/>
+            <path d="M14,10 H22 L27,24 L32,10 H40 V46 H34 V22 L30,34 H24 L20,22 V46 H14 Z" fill="#ffffff"/>
+            <path d="M44,10 H66 V18 H58 V46 H50 V18 H44 Z" fill="#ffffff"/>
+            <rect x="47" y="4" width="16" height="4" rx="2" fill="#f7b500"/>
+            <rect x="2" y="49" width="64" height="4.5" rx="2.2" fill="#f7b500"/>
+          </svg>
+          <div class="auth-title">CỔNG ĐẶT MÓN SINH VIÊN</div>
+        </div>
+        <div class="auth-subtitle">Vui lòng nhập Mã số sinh viên (MSSV) và Mật khẩu để tiếp tục</div>
+      </div>
+
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab-btn active" id="tab-login-btn">Đăng nhập</button>
+        <button type="button" class="auth-tab-btn" id="tab-register-btn">Đăng ký mới</button>
+      </div>
+
+      <div class="auth-body">
+        <div id="auth-alert" class="auth-alert"></div>
+
+        <!-- Form Đăng nhập -->
+        <form id="form-login" class="auth-form active" autocomplete="off">
+          <div class="auth-group">
+            <label for="login-mssv">Mã số sinh viên (MSSV)</label>
+            <input type="text" id="login-mssv" class="auth-input" placeholder="Ví dụ: 20012345" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
+          </div>
+
+          <div class="auth-group">
+            <label for="login-password">Mật khẩu</label>
+            <input type="password" id="login-password" class="auth-input" placeholder="Nhập mật khẩu của bạn" autocomplete="new-password" required>
+          </div>
+
+          <button type="submit" class="btn-auth-submit">Đăng nhập hệ thống</button>
+        </form>
+
+        <!-- Form Đăng ký -->
+        <form id="form-register" class="auth-form" autocomplete="off">
+          <div class="auth-group">
+            <label for="reg-mssv">Mã số sinh viên (MSSV)</label>
+            <input type="text" id="reg-mssv" class="auth-input" placeholder="Nhập MSSV (8 chữ số)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
+          </div>
+
+          <div class="auth-group">
+            <label for="reg-name">Họ và tên sinh viên</label>
+            <input type="text" id="reg-name" class="auth-input" placeholder="Nhập họ và tên sinh viên" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
+          </div>
+
+          <div class="auth-group">
+            <label for="reg-password">Tạo mật khẩu</label>
+            <input type="password" id="reg-password" class="auth-input" placeholder="Mật khẩu tối thiểu 4 ký tự" autocomplete="new-password" required>
+          </div>
+
+          <button type="submit" class="btn-auth-submit">Đăng ký &amp; Đăng nhập ngay</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. THANH TOP BAR XANH ĐẬM (THEO ẢNH IUH MẪU) -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="topbar-welcome">
+        Chào mừng bạn đến với Cổng Đặt Trà Sữa Sinh Viên - IMT Milk Tea
+      </div>
+      <div class="topbar-links">
+        <a class="topbar-link" data-switch-tab="tab-menu">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4v2h16V4zm1 10v-2l-1-5H4l-1 5v2h1v6h10v-6h4v6h2v-6h1zm-9 4H6v-4h6v4z"/></svg>
+          <span>Thực đơn</span>
+        </a>
+        <a class="topbar-link" data-switch-tab="tab-community">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"/></svg>
+          <span>Cộng đồng</span>
+        </a>
+        <a class="topbar-link" data-switch-tab="tab-mine">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>Lịch sử của tôi</span>
+        </a>
+        <span class="topbar-divider"></span>
+        <!-- Trạng thái kết nối SQLite Database -->
+        <div class="db-status-pill offline" id="db-status-badge" title="Đang kiểm tra kết nối Database...">
+          <span class="db-status-dot"></span>
+          <span id="db-status-text">Đang kiểm tra CSDL...</span>
+        </div>
+        <!-- Hiển thị thông tin sinh viên đang đăng nhập -->
+        <div class="user-pill-badge" id="topbar-user-badge">
+          <span>SV:</span> <strong id="topbar-user-name">Chưa đăng nhập</strong>
+          <button type="button" id="btn-logout" class="btn-logout-small" title="Đăng xuất tài khoản sinh viên">Thoát</button>
+        </div>
+        <div class="lang-pill">
+          <span class="vn-flag">
+            <svg viewBox="0 0 24 24"><polygon points="12,2 14.9,8.6 22,9.3 16.5,14 18.2,21 12,17.3 5.8,21 7.5,14 2,9.3 9.1,8.6"/></svg>
+          </span>
+          <span>VNI</span>
+        </div>
+        <!-- Cổng Quản Trị Viên Admin -->
+        <a href="/admin" class="topbar-admin-btn" title="Vào Cổng Quản Trị Viên (Admin)">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="#f7b500"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          <span>Admin</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. HEADER CHÍNH & LOGO PHONG CÁCH TỪ CHỮ "IMT" -->
+  <header class="main-header">
+    <div class="header-inner">
+      <a class="brand-logo" data-switch-tab="tab-menu">
+        <!-- LOGO ĐƯỢC THIẾT KẾ ĐẶC TRƯNG TỪ CHỮ "IMT" (HÌNH HỌC XANH - VÀNG) -->
+        <svg class="brand-emblem-imt" viewBox="0 0 74 62">
+          <!-- Chữ I: Cột xanh thẳng đứng bên trái + đỉnh vàng -->
+          <rect x="4" y="14" width="10" height="34" rx="2" fill="#16329c"/>
+          <polygon points="9,4 15,11 3,11" fill="#f7b500"/>
+
+          <!-- Chữ M: Hai trụ dọc vững chắc kết hợp chữ V cách điệu ở giữa -->
+          <path d="M18,14 H27 L33.5,28 L40,14 H49 V48 H41.5 V24 L35.5,36 H31.5 L25.5,24 V48 H18 Z" fill="#16329c"/>
+
+          <!-- Chữ T: Thanh ngang bao phủ đỉnh và trụ dọc chính tâm -->
+          <path d="M52,14 H72 V22 H65.5 V48 H58.5 V22 H52 Z" fill="#16329c"/>
+          <rect x="54" y="7" width="16" height="4.5" rx="2" fill="#f7b500"/>
+
+          <!-- Thanh đế vàng vững chắc bên dưới liên kết 3 chữ IMT -->
+          <rect x="4" y="52" width="68" height="5" rx="2.5" fill="#f7b500"/>
+        </svg>
+        <div class="brand-text">
+          <span>IMT Milk Tea</span>
+          <span>Hệ thống Trà sữa Sinh viên</span>
+          <span>Thành phố Hồ Chí Minh</span>
+        </div>
+      </a>
+
+      <!-- 3 Tab điều hướng chính -->
+      <nav class="nav-tabs">
+        <button type="button" class="nav-tab-btn active" data-tab="tab-menu">
+          <span>1. Chọn món Order</span>
+          <span class="nav-chevron">⌄</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-tab="tab-community">
+          <span>2. Cộng đồng</span>
+          <span class="nav-chevron">⌄</span>
+        </button>
+        <button type="button" class="nav-tab-btn" data-tab="tab-mine">
+          <span>3. Của tôi</span>
+          <span id="mine-count-badge" class="tab-badge">0</span>
+          <span class="nav-chevron">⌄</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 3. HERO BANNER SLIDER: CÁC DEAL ƯU ĐÃI (MUA 5 TẶNG 1, GIẢM 5% THẺ SV, HAPPY HOUR) -->
+  <section class="hero-banner" id="hero-banner-section">
+    <!-- Nút điều hướng chuyển slide trước / sau -->
+    <button type="button" class="hero-arrow-btn prev" id="hero-prev-btn" title="Ưu đãi trước">&#10094;</button>
+    <button type="button" class="hero-arrow-btn next" id="hero-next-btn" title="Ưu đãi kế tiếp">&#10095;</button>
+
+    <div class="hero-slider-wrap">
+      <div class="hero-slider-track" id="hero-slider-track">
+      <!-- SLIDE 1: BEST SELLER MENU -->
+      <div class="hero-slide active" data-slide-index="0">
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-partner-row">
+              <div class="the-badge">
+                <div class="the-box">IMT</div>
+                <div class="the-label">
+                  Top Student Choice<br>Tea &amp; Coffee
+                </div>
+              </div>
+              <div class="hero-sub-brand">
+                <div class="hero-sub-brand-text">
+                  IMT Milk Tea<br>
+                  Fresh Brewed Daily
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-kicker">
+              2026 SIGNATURE BUBBLE TEA <span>BEST SELLER MENU</span>
+            </div>
+
+            <div class="hero-main-row">
+              <div class="hero-headline-block">
+                <div class="hero-script-line">Thưởng thức<strong>MENU</strong></div>
+                <div class="hero-upper-line">TRÀ SỮA ĐẬM VỊ</div>
+                <div>
+                  <span class="hero-big-number">100<sup>%</sup></span>
+                  <span class="hero-number-caption">tươi ngon</span>
+                </div>
+                <div class="hero-glow-line"></div>
+                <div class="hero-footnote">
+                  (Ủ trà chuẩn vị mỗi ngày - Tùy chọn mức đường &amp; đá theo sở thích)
+                </div>
+              </div>
+
+              <div class="hero-dark-card hero-deal-card">
+                <div class="hero-dark-card-top">
+                  <span class="hero-dark-mini-badge">HOT</span>
+                  <span class="hero-dark-mini-text">Menu Sinh Viên<br>Yêu Thích 2026</span>
+                </div>
+                <div class="hero-dark-title">Top 8 Món</div>
+                <div class="hero-dark-sub">CHỈ TỪ 25.000Đ</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <svg class="hero-curve-svg" viewBox="0 0 140 420" preserveAspectRatio="none">
+              <path d="M0,0 L95,0 C35,140 125,280 55,420 L0,420 Z" fill="#122e93"/>
+              <path d="M85,0 L125,0 C65,140 140,280 85,420 L45,420 C115,280 25,140 85,0 Z" fill="#f7b500"/>
+            </svg>
+
+            <div class="hero-Right-showcase">
+              <div class="showcase-card">
+                <span class="showcase-tag">ĐẶT MÓN NHANH CHÓNG</span>
+                <div class="showcase-title">Trà Sữa Trân Châu Hoàng Kim</div>
+                <div class="showcase-desc">Chọn món tại Tab 1 và xem lại đơn đã đặt tại Tab Của Tôi</div>
+                <svg viewBox="0 0 220 110" width="210" height="105">
+                  <g transform="translate(15,10)">
+                    <path d="M10,20 L50,20 L44,85 C44,89 40,92 36,92 L24,92 C20,92 16,89 16,85 Z" fill="#88c979" stroke="#16329c" stroke-width="2"/>
+                    <rect x="6" y="15" width="48" height="6" rx="3" fill="#16329c"/>
+                    <line x1="30" y1="2" x2="30" y2="25" stroke="#f7b500" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="24" cy="78" r="3.5" fill="#2c1d11"/><circle cx="34" cy="80" r="3.5" fill="#2c1d11"/><circle cx="29" cy="72" r="3.5" fill="#2c1d11"/>
+                  </g>
+                  <g transform="translate(80,4)">
+                    <path d="M8,22 L54,22 L47,92 C47,96 43,99 39,99 L23,99 C19,99 15,96 15,92 Z" fill="#e6b98a" stroke="#16329c" stroke-width="2.2"/>
+                    <path d="M8,22 Q31,10 54,22" fill="#ffffff" stroke="#16329c" stroke-width="2"/>
+                    <rect x="5" y="18" width="52" height="6" rx="3" fill="#f7b500"/>
+                    <line x1="31" y1="0" x2="31" y2="24" stroke="#16329c" stroke-width="4.5" stroke-linecap="round"/>
+                    <circle cx="22" cy="86" r="4" fill="#231709"/><circle cx="31" cy="88" r="4" fill="#231709"/><circle cx="40" cy="85" r="4" fill="#231709"/>
+                    <circle cx="26" cy="78" r="4" fill="#231709"/><circle cx="36" cy="77" r="4" fill="#231709"/>
+                  </g>
+                  <g transform="translate(148,10)">
+                    <path d="M10,20 L50,20 L44,85 C44,89 40,92 36,92 L24,92 C20,92 16,89 16,85 Z" fill="#b79ced" stroke="#16329c" stroke-width="2"/>
+                    <rect x="6" y="15" width="48" height="6" rx="3" fill="#16329c"/>
+                    <line x1="30" y1="2" x2="30" y2="25" stroke="#ff5c8a" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="25" cy="79" r="3.5" fill="#2c1d11"/><circle cx="35" cy="78" r="3.5" fill="#2c1d11"/>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: DEAL MUA 5 TẶNG 1 -->
+      <div class="hero-slide" data-slide-index="1">
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-partner-row">
+              <div class="the-badge">
+                <div class="the-box" style="background: linear-gradient(135deg, #f7b500, #ff5722);">5+1</div>
+                <div class="the-label">
+                  Mega Group Deal<br>Order Theo Nhóm
+                </div>
+              </div>
+              <div class="hero-sub-brand">
+                <div class="hero-sub-brand-text">
+                  Dành Riêng Cho Bạn Bè<br>&amp; Nhóm Học Tập CLB
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-kicker">
+              CHƯƠNG TRÌNH KHUYẾN MÃI ĐỒNG ĐỘI <span>MUA 5 TẶNG 1</span>
+            </div>
+
+            <div class="hero-main-row">
+              <div class="hero-headline-block">
+                <div class="hero-script-line">Siêu ưu đãi<strong>MUA 5</strong></div>
+                <div class="hero-upper-line">TẶNG NGAY 1 LY</div>
+                <div>
+                  <span class="hero-big-number">5+1</span>
+                  <span class="hero-number-caption">ly miễn phí</span>
+                </div>
+                <div class="hero-glow-line"></div>
+                <div class="hero-footnote">
+                  (Áp dụng khi đặt cùng lúc từ 5 ly - Tặng ngay 1 ly Trà sữa truyền thống hoặc Topping bất kỳ)
+                </div>
+              </div>
+
+              <div class="hero-dark-card hero-deal-card">
+                <div class="hero-dark-card-top">
+                  <span class="hero-dark-mini-badge" style="background: #f7b500; color: #0e2476;">DEAL KHỦNG</span>
+                  <span class="hero-dark-mini-text">Ưu Đãi Nhóm<br>Học Tập &amp; CLB</span>
+                </div>
+                <div class="hero-dark-title">FREE 1 LY</div>
+                <div class="hero-dark-sub">TIẾT KIỆM 25.000Đ</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <svg class="hero-curve-svg" viewBox="0 0 140 420" preserveAspectRatio="none">
+              <path d="M0,0 L95,0 C35,140 125,280 55,420 L0,420 Z" fill="#122e93"/>
+              <path d="M85,0 L125,0 C65,140 140,280 85,420 L45,420 C115,280 25,140 85,0 Z" fill="#f7b500"/>
+            </svg>
+
+            <div class="hero-Right-showcase">
+              <div class="showcase-card">
+                <span class="showcase-tag" style="background: #df9f00;">COMBO NHÓM SINH VIÊN</span>
+                <div class="showcase-title">Mua 5 Ly Tặng 1 Ly Miễn Phí</div>
+                <div class="showcase-desc">Đặt cùng nhóm bạn bè để nhận ngay ly trà sữa tặng kèm thơm béo</div>
+                <svg viewBox="0 0 220 110" width="210" height="105">
+                  <rect x="18" y="24" width="70" height="60" rx="8" fill="#16329c"/>
+                  <rect x="13" y="16" width="80" height="14" rx="4" fill="#f7b500"/>
+                  <line x1="53" y1="16" x2="53" y2="84" stroke="#ffffff" stroke-width="4"/>
+                  <line x1="18" y1="48" x2="88" y2="48" stroke="#ffffff" stroke-width="4"/>
+                  <text x="53" y="102" font-size="11" font-weight="bold" fill="#16329c" text-anchor="middle">HỘP QUÀ TẶNG</text>
+                  <g transform="translate(125,4)">
+                    <path d="M8,22 L54,22 L47,92 C47,96 43,99 39,99 L23,99 C19,99 15,96 15,92 Z" fill="#ffd166" stroke="#16329c" stroke-width="2.2"/>
+                    <rect x="5" y="18" width="52" height="6" rx="3" fill="#ef476f"/>
+                    <line x1="31" y1="0" x2="31" y2="24" stroke="#16329c" stroke-width="4.5" stroke-linecap="round"/>
+                    <circle cx="24" cy="85" r="4" fill="#231709"/><circle cx="34" cy="88" r="4" fill="#231709"/><circle cx="44" cy="84" r="4" fill="#231709"/>
+                    <rect x="12" y="44" width="38" height="16" rx="4" fill="#ef476f"/>
+                    <text x="31" y="56" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">FREE</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: DEAL GIẢM 5% CHO SINH VIÊN CÓ THẺ SINH VIÊN -->
+      <div class="hero-slide" data-slide-index="2">
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-partner-row">
+              <div class="the-badge">
+                <div class="the-box" style="background: linear-gradient(135deg, #00b4d8, #0077b6);">-5%</div>
+                <div class="the-label">
+                  Student ID Discount<br>Đặc Quyền Sinh Viên
+                </div>
+              </div>
+              <div class="hero-sub-brand">
+                <div class="hero-sub-brand-text">
+                  Xuất Trình Thẻ SV Hoặc<br>Đăng Nhập Bằng MSSV
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-kicker">
+              CHƯƠNG TRÌNH ĐỒNG HÀNH CÙNG SINH VIÊN <span>GIẢM 5% TỔNG ĐƠN</span>
+            </div>
+
+            <div class="hero-main-row">
+              <div class="hero-headline-block">
+                <div class="hero-script-line">Ưu đãi thẻ SV<strong>GIẢM 5%</strong></div>
+                <div class="hero-upper-line">TRÊN MỌI ĐƠN HÀNG</div>
+                <div>
+                  <span class="hero-big-number">-5<sup>%</sup></span>
+                  <span class="hero-number-caption">toàn hóa đơn</span>
+                </div>
+                <div class="hero-glow-line"></div>
+                <div class="hero-footnote">
+                  (Chỉ cần xuất trình thẻ sinh viên hoặc đặt hàng bằng tài khoản MSSV trên hệ thống IMT)
+                </div>
+              </div>
+
+              <div class="hero-dark-card hero-deal-card">
+                <div class="hero-dark-card-top">
+                  <span class="hero-dark-mini-badge" style="background: #00b4d8; color: #ffffff;">THẺ SV</span>
+                  <span class="hero-dark-mini-text">Chiết Khấu Trực Tiếp<br>Không Giới Hạn</span>
+                </div>
+                <div class="hero-dark-title">GIẢM 5%</div>
+                <div class="hero-dark-sub">MỌI LÚC MỌI NƠI</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <svg class="hero-curve-svg" viewBox="0 0 140 420" preserveAspectRatio="none">
+              <path d="M0,0 L95,0 C35,140 125,280 55,420 L0,420 Z" fill="#122e93"/>
+              <path d="M85,0 L125,0 C65,140 140,280 85,420 L45,420 C115,280 25,140 85,0 Z" fill="#f7b500"/>
+            </svg>
+
+            <div class="hero-Right-showcase">
+              <div class="showcase-card">
+                <span class="showcase-tag" style="background: #0b699e;">THẺ SINH VIÊN CHÍNH CHỦ</span>
+                <div class="showcase-title">Giảm 5% Khi Mang Thẻ SV</div>
+                <div class="showcase-desc">Tự động áp dụng khi đăng nhập MSSV hoặc xuất trình thẻ tại quầy</div>
+                <svg viewBox="0 0 220 110" width="210" height="105">
+                  <rect x="15" y="10" width="135" height="85" rx="8" fill="#102783" stroke="#f7b500" stroke-width="2"/>
+                  <rect x="22" y="18" width="121" height="16" rx="3" fill="#f7b500"/>
+                  <text x="82" y="30" font-size="9.5" font-weight="900" fill="#102783" text-anchor="middle">IMT STUDENT CARD</text>
+                  <circle cx="40" cy="56" r="16" fill="#dde3f0"/>
+                  <circle cx="40" cy="52" r="6" fill="#16329c"/>
+                  <path d="M28,68 C28,62 34,60 40,60 C46,60 52,62 52,68 Z" fill="#16329c"/>
+                  <rect x="64" y="44" width="75" height="5" rx="2" fill="#ffffff"/>
+                  <rect x="64" y="54" width="55" height="5" rx="2" fill="#f7b500"/>
+                  <rect x="64" y="64" width="65" height="5" rx="2" fill="#ffffff" opacity="0.8"/>
+                  <rect x="64" y="74" width="40" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+                  <circle cx="180" cy="52" r="28" fill="#df9f00" stroke="#ffffff" stroke-width="3"/>
+                  <text x="180" y="48" font-size="16" font-weight="900" fill="#0e2476" text-anchor="middle">-5%</text>
+                  <text x="180" y="63" font-size="9.5" font-weight="800" fill="#0e2476" text-anchor="middle">GIẢM NGAY</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: DEAL HAPPY HOUR 14H - 17H: FREE NÂNG SIZE L -->
+      <div class="hero-slide" data-slide-index="3">
+        <div class="hero-inner">
+          <div class="hero-left">
+            <div class="hero-partner-row">
+              <div class="the-badge">
+                <div class="the-box" style="background: linear-gradient(135deg, #7928ca, #ff0080);">14H</div>
+                <div class="the-label">
+                  Happy Hour 14:00 - 17:00<br>Khung Giờ Vàng
+                </div>
+              </div>
+              <div class="hero-sub-brand">
+                <div class="hero-sub-brand-text">
+                  Nạp Năng Lượng Sau Giờ Học<br>Từ Thứ Hai Đến Chủ Nhật
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-kicker">
+              KHUNG GIỜ VÀNG MỖI NGÀY <span>FREE UPGRADE SIZE L</span>
+            </div>
+
+            <div class="hero-main-row">
+              <div class="hero-headline-block">
+                <div class="hero-script-line">Khung giờ vàng<strong>FREE SIZE L</strong></div>
+                <div class="hero-upper-line">UỐNG TRÀ THẢ GA</div>
+                <div>
+                  <span class="hero-big-number">Size L</span>
+                  <span class="hero-number-caption">giá Size M</span>
+                </div>
+                <div class="hero-glow-line"></div>
+                <div class="hero-footnote">
+                  (Tự động nâng lên Size L khổng lồ miễn phí cho mọi đơn hàng từ 14:00 đến 17:00)
+                </div>
+              </div>
+
+              <div class="hero-dark-card hero-deal-card">
+                <div class="hero-dark-card-top">
+                  <span class="hero-dark-mini-badge" style="background: #7928ca; color: #ffffff;">HAPPY HOUR</span>
+                  <span class="hero-dark-mini-text">Nâng Cỡ Ly Lớn<br>14:00 - 17:00</span>
+                </div>
+                <div class="hero-dark-title">FREE SIZE L</div>
+                <div class="hero-dark-sub">TIẾT KIỆM 5.000Đ/LY</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-right">
+            <svg class="hero-curve-svg" viewBox="0 0 140 420" preserveAspectRatio="none">
+              <path d="M0,0 L95,0 C35,140 125,280 55,420 L0,420 Z" fill="#122e93"/>
+              <path d="M85,0 L125,0 C65,140 140,280 85,420 L45,420 C115,280 25,140 85,0 Z" fill="#f7b500"/>
+            </svg>
+
+            <div class="hero-Right-showcase">
+              <div class="showcase-card">
+                <span class="showcase-tag" style="background: #7928ca;">14:00 - 17:00 HÀNG NGÀY</span>
+                <div class="showcase-title">Nâng Cỡ Ly Lớn Miễn Phí</div>
+                <div class="showcase-desc">Uống trà sữa Size L mát lạnh sảng khoái với giá của Size M</div>
+                <svg viewBox="0 0 220 110" width="210" height="105">
+                  <g transform="translate(30,16)">
+                    <path d="M8,20 L42,20 L37,76 C37,80 33,83 29,83 L21,83 C17,83 13,80 13,76 Z" fill="#d4a373" stroke="#16329c" stroke-width="2"/>
+                    <rect x="5" y="16" width="40" height="5" rx="2.5" fill="#f7b500"/>
+                    <line x1="25" y1="2" x2="25" y2="20" stroke="#16329c" stroke-width="3.5" stroke-linecap="round"/>
+                    <circle cx="20" cy="72" r="3" fill="#231709"/><circle cx="28" cy="74" r="3" fill="#231709"/>
+                    <text x="25" y="96" font-size="11" font-weight="bold" fill="#16329c" text-anchor="middle">Size M</text>
+                  </g>
+                  <path d="M90,52 L116,52 M110,44 L118,52 L110,60" stroke="#f7b500" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <text x="104" y="38" font-size="10" font-weight="900" fill="#df9f00" text-anchor="middle">UPGRADE</text>
+                  <g transform="translate(136,2)">
+                    <path d="M8,22 L54,22 L47,94 C47,98 43,101 39,101 L23,101 C19,101 15,98 15,94 Z" fill="#ffd166" stroke="#16329c" stroke-width="2.2"/>
+                    <rect x="5" y="18" width="52" height="6" rx="3" fill="#16329c"/>
+                    <line x1="31" y1="0" x2="31" y2="24" stroke="#f7b500" stroke-width="4.5" stroke-linecap="round"/>
+                    <circle cx="22" cy="88" r="4" fill="#231709"/><circle cx="31" cy="90" r="4" fill="#231709"/><circle cx="40" cy="87" r="4" fill="#231709"/>
+                    <circle cx="26" cy="80" r="4" fill="#231709"/><circle cx="36" cy="79" r="4" fill="#231709"/>
+                    <text x="31" y="112" font-size="12" font-weight="900" fill="#16329c" text-anchor="middle">Size L (FREE)</text>
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Hàng chấm tròn điều khiển 4 slide ưu đãi -->
+    <div class="hero-dots" id="hero-dots-container">
+      <span class="hero-dot active" data-slide-target="0" title="Menu Bestseller"></span>
+      <span class="hero-dot" data-slide-target="1" title="Ưu đãi Mua 5 Tặng 1"></span>
+      <span class="hero-dot" data-slide-target="2" title="Giảm 5% có Thẻ Sinh Viên"></span>
+      <span class="hero-dot" data-slide-target="3" title="Happy Hour Free Size L"></span>
+    </div>
+  </section>
+
+  <!-- 4. NỘI DUNG CHÍNH CỦA 3 TAB -->
+  <main class="main-container">
+
+    <!-- Thông báo sau khi chốt order -->
+    <div id="order-toast" class="toast-notice">
+      <span id="order-toast-text">Đã lưu lựa chọn của bạn</span>
+      <button type="button" class="btn" id="btn-view-my-orders">Xem lịch sử của tôi</button>
+    </div>
+
+    <!-- TAB 1: CHỌN MÓN ĐỂ ORDER -->
+    <section id="tab-menu" class="tab-panel active">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-accent-bar"></div>
+          <div>
+            <h2 class="section-title">Thực đơn Chọn Món Order</h2>
+            <p class="section-subtitle">Bấm nút "Chọn món yêu thích (Order)" trên món bạn thích để chọn Size, Đường, Đá và chốt đơn ngay</p>
+          </div>
+        </div>
+        <div class="filter-bar">
+          <input type="text" id="menu-search" class="search-input" placeholder="Tìm tên món trà sữa...">
+        </div>
+      </div>
+
+      <div id="menu-grid" class="menu-grid"></div>
+    </section>
+
+    <!-- TAB 2: CỘNG ĐỒNG (DỮ LIỆU CHUNG) -->
+    <section id="tab-community" class="tab-panel">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-accent-bar"></div>
+          <div>
+            <h2 class="section-title">Cộng đồng Order (Dữ liệu chung)</h2>
+            <p class="section-subtitle">Mọi người vào web đều xem được các lượt order của tất cả sinh viên</p>
+          </div>
+        </div>
+        <button type="button" id="btn-reload-community" class="btn">Tải lại dữ liệu</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Tổng số lượt order toàn hệ thống</div>
+          <div class="stat-value" id="community-total">0</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Món được chọn nhiều nhất</div>
+          <div class="stat-value" id="community-top-one">Chưa có dữ liệu</div>
+        </div>
+      </div>
+
+      <div class="card-box">
+        <div class="card-box-title">
+          <span>Bảng xếp hạng món trà sữa được chọn nhiều nhất</span>
+        </div>
+        <div id="community-ranking-wrap" class="table-wrap"></div>
+      </div>
+
+      <div class="card-box">
+        <div class="card-box-title">
+          <span>Danh sách tất cả lượt order (Mới nhất ở trên cùng)</span>
+        </div>
+        <div id="community-table-wrap" class="table-wrap"></div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CỦA TÔI (DỮ LIỆU RIÊNG THEO MSSV) -->
+    <section id="tab-mine" class="tab-panel">
+      <div class="section-head">
+        <div class="section-head-left">
+          <div class="section-accent-bar"></div>
+          <div>
+            <h2 class="section-title">Lịch sử Order Của Tôi (Dữ liệu riêng)</h2>
+            <p class="section-subtitle">Chỉ hiển thị lịch sử các lần chọn món của tài khoản sinh viên đang đăng nhập</p>
+          </div>
+        </div>
+        <button type="button" id="btn-clear-mine" class="btn btn-danger">Xóa lịch sử của tôi</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Tổng số lần bạn đã order</div>
+          <div class="stat-value" id="mine-total">0</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Món bạn order nhiều nhất</div>
+          <div class="stat-value" id="mine-top-drink">Chưa có dữ liệu</div>
+        </div>
+      </div>
+
+      <div class="card-box">
+        <div class="card-box-title">
+          <span id="mine-table-title">Danh sách các món bạn đã order</span>
+        </div>
+        <div id="mine-table-wrap" class="table-wrap"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 5. POPUP MODAL ĐẶT MÓN (ORDER) -->
+  <div id="order-modal" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>ĐẶT MÓN TRÀ SỮA (ORDER)</h3>
+        <button type="button" id="btn-close-modal" class="modal-close" title="Đóng">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="selected-drink-summary">
+          <div class="selected-drink-name" id="modal-drink-name">Trà sữa truyền thống</div>
+          <div class="selected-drink-price" id="modal-drink-price">25.000đ</div>
+        </div>
+
+        <form id="order-form" novalidate>
+          <div class="form-group">
+            <label for="input-user-name">Tên sinh viên &amp; MSSV (Tự động theo tài khoản)</label>
+            <input type="text" id="input-user-name" class="form-control" maxlength="80" readonly style="background-color: #f4f7fc; font-weight: 700; color: var(--iuh-blue);">
+          </div>
+
+          <div class="form-row-3">
+            <div class="form-group">
+              <label for="select-size">Size</label>
+              <select id="select-size" class="form-control">
+                <option value="M">Size M</option>
+                <option value="L">Size L</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="select-sugar">Mức đường</label>
+              <select id="select-sugar" class="form-control">
+                <option value="100%">100% đường</option>
+                <option value="50%">50% đường</option>
+                <option value="0%">0% đường</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="select-ice">Mức đá</label>
+              <select id="select-ice" class="form-control">
+                <option value="bình thường">Bình thường</option>
+                <option value="ít">Ít đá</option>
+                <option value="không">Không đá</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="input-note">Ghi chú thêm (tùy chọn)</label>
+            <input type="text" id="input-note" class="form-control" maxlength="120" placeholder="Ví dụ: thêm trân châu, để đá riêng...">
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" id="btn-cancel-modal" class="btn">Hủy</button>
+            <button type="submit" class="btn-submit-order">Xác nhận Order</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="floating-help-btn" id="btn-scroll-top" title="Lên đầu trang">?</button>
+
+  <!-- =========================================================
+       6. DATABASE VÀ TOÀN BỘ LOGIC JAVASCRIPT
+       ========================================================= -->
+  <script>
+    // =========================================================
+    // I. DATABASE LƯU TÀI KHOẢN, MẬT KHẨU VÀ DỮ LIỆU RIÊNG TỪNG SINH VIÊN
+    // =========================================================
+    const DB_USERS_KEY = "imt_database_users_v2";
+    const DB_CURRENT_USER_KEY = "imt_database_current_user_v2";
+    const DB_PRIVATE_ORDERS_KEY = "imt_database_private_orders_v2";
+    const DB_SHARED_ORDERS_KEY = "imt_database_shared_orders_v2";
+    const DB_AUTH_TOKEN_KEY = "imt_auth_token_v2";
+
+    // Địa chỉ API kết nối Backend SQLite (Tự động thích ứng dù mở file:// hay http://localhost:3000)
+    const API_BASE = (window.location.protocol === "file:") ? "http://localhost:3000" : "";
+
+    // Danh sách tài khoản sinh viên mặc định (dùng khi chạy chế độ offline fallback)
+    const DEFAULT_USERS = [
+      { mssv: "20012345", password: "123456", fullName: "Nguyễn Văn An" },
+      { mssv: "20067890", password: "123456", fullName: "Trần Thị Bích" }
+    ];
+
+    const IMT_Database = {
+      isServerConnected: false,
+      currentUser: null,
+      token: null,
+
+      // Khởi tạo và kiểm tra kết nối với SQLite Server
+      init: async function() {
+        this.token = localStorage.getItem(DB_AUTH_TOKEN_KEY) || null;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 2000);
+          const res = await fetch(API_BASE + "/api/me", {
+            headers: this.token ? { "Authorization": "Bearer " + this.token } : {},
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const data = await res.json();
+            this.isServerConnected = true;
+            this.currentUser = data.user;
+          } else if (res.status === 401) {
+            this.isServerConnected = true;
+            this.currentUser = null;
+            this.token = null;
+            localStorage.removeItem(DB_AUTH_TOKEN_KEY);
+          } else {
+            this.isServerConnected = true;
+          }
+        } catch (e) {
+          // Khi server chưa bật hoặc mở file offline
+          this.isServerConnected = false;
+          const raw = localStorage.getItem(DB_CURRENT_USER_KEY);
+          this.currentUser = raw ? JSON.parse(raw) : null;
+          if (!localStorage.getItem(DB_USERS_KEY)) {
+            localStorage.setItem(DB_USERS_KEY, JSON.stringify(DEFAULT_USERS));
+          }
+        }
+        this.updateStatusBadge();
+      },
+
+      updateStatusBadge: function() {
+        const badge = document.getElementById("db-status-badge");
+        const text = document.getElementById("db-status-text");
+        if (!badge || !text) return;
+        if (this.isServerConnected) {
+          badge.className = "db-status-pill online";
+          badge.title = "Đang kết nối CSDL SQLite (imt_teashop.db) - Mật khẩu mã hóa Scrypt";
+          text.textContent = "SQLite (Scrypt Hash)";
+        } else {
+          badge.className = "db-status-pill offline";
+          badge.title = "Chưa kết nối Server SQLite. Chạy lệnh 'node server.js' trong thư mục WEB";
+          text.textContent = "Chế độ Offline (localStorage)";
+        }
+      },
+
+      getCurrentUser: function() {
+        return this.currentUser;
+      },
+
+      // Đăng ký tài khoản sinh viên mới
+      registerUser: async function(mssv, password, fullName) {
+        if (this.isServerConnected) {
+          try {
+            const res = await fetch(API_BASE + "/api/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mssv, password, fullName })
+            });
+            const data = await res.json();
+            if (data.success) {
+              this.token = data.token;
+              this.currentUser = data.user;
+              localStorage.setItem(DB_AUTH_TOKEN_KEY, this.token);
+              return { success: true, user: data.user };
+            } else {
+              return { success: false, message: data.message };
+            }
+          } catch (e) {
+            return { success: false, message: "Lỗi kết nối SQLite Server." };
+          }
+        }
+
+        // Chế độ Offline Fallback
+        try {
+          const raw = localStorage.getItem(DB_USERS_KEY);
+          const users = raw ? JSON.parse(raw) : DEFAULT_USERS;
+          const exists = users.find(function(u) { return u.mssv.trim() === mssv.trim(); });
+          if (exists) {
+            return { success: false, message: "Mã số sinh viên (MSSV) này đã tồn tại trong hệ thống!" };
+          }
+          const newUser = {
+            mssv: mssv.trim(),
+            password: password.trim(),
+            fullName: fullName.trim(),
+            createdAt: new Date().toISOString()
+          };
+          users.push(newUser);
+          localStorage.setItem(DB_USERS_KEY, JSON.stringify(users));
+          this.currentUser = newUser;
+          localStorage.setItem(DB_CURRENT_USER_KEY, JSON.stringify(newUser));
+          return { success: true, user: newUser };
+        } catch (e) {
+          return { success: false, message: "Lỗi ghi Database khi đăng ký." };
+        }
+      },
+
+      // Xác thực đăng nhập sinh viên
+      loginUser: async function(mssv, password) {
+        if (this.isServerConnected) {
+          try {
+            const res = await fetch(API_BASE + "/api/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ mssv, password })
+            });
+            const data = await res.json();
+            if (data.success) {
+              this.token = data.token;
+              this.currentUser = data.user;
+              localStorage.setItem(DB_AUTH_TOKEN_KEY, this.token);
+              return { success: true, user: data.user };
+            } else {
+              return { success: false, message: data.message };
+            }
+          } catch (e) {
+            return { success: false, message: "Lỗi kết nối SQLite Server." };
+          }
+        }
+
+        // Chế độ Offline Fallback
+        try {
+          const raw = localStorage.getItem(DB_USERS_KEY);
+          const users = raw ? JSON.parse(raw) : DEFAULT_USERS;
+          const user = users.find(function(u) {
+            return u.mssv.trim() === mssv.trim() && u.password === password;
+          });
+          if (user) {
+            this.currentUser = user;
+            localStorage.setItem(DB_CURRENT_USER_KEY, JSON.stringify(user));
+            return { success: true, user: user };
+          } else {
+            return { success: false, message: "MSSV hoặc mật khẩu không chính xác!" };
+          }
+        } catch (e) {
+          return { success: false, message: "Lỗi kết nối cơ sở dữ liệu." };
+        }
+      },
+
+      // Đăng xuất
+      logout: async function() {
+        if (this.isServerConnected && this.token) {
+          try {
+            await fetch(API_BASE + "/api/logout", {
+              method: "POST",
+              headers: { "Authorization": "Bearer " + this.token }
+            });
+          } catch (e) {}
+        }
+        this.token = null;
+        this.currentUser = null;
+        localStorage.removeItem(DB_AUTH_TOKEN_KEY);
+        localStorage.removeItem(DB_CURRENT_USER_KEY);
+      },
+
+      // Đọc DỮ LIỆU RIÊNG của đúng sinh viên đang đăng nhập
+      getPrivateOrdersByMSSV: async function(mssv) {
+        if (this.isServerConnected && this.token) {
+          try {
+            const res = await fetch(API_BASE + "/api/orders/mine", {
+              headers: { "Authorization": "Bearer " + this.token }
+            });
+            if (res.ok) {
+              const data = await res.json();
+              return data.orders || [];
+            }
+          } catch (e) {}
+        }
+
+        // Offline Fallback
+        try {
+          if (!mssv) return [];
+          const raw = localStorage.getItem(DB_PRIVATE_ORDERS_KEY);
+          const db = raw ? JSON.parse(raw) : {};
+          return Array.isArray(db[mssv]) ? db[mssv] : [];
+        } catch (e) {
+          return [];
+        }
+      },
+
+      // Ghi DỮ LIỆU RIÊNG cho đúng sinh viên đang đăng nhập
+      savePrivateOrderByMSSV: async function(mssv, orderRecord) {
+        if (this.isServerConnected && this.token) {
+          try {
+            const res = await fetch(API_BASE + "/api/orders", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + this.token
+              },
+              body: JSON.stringify(orderRecord)
+            });
+            const data = await res.json();
+            return data.success;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        // Offline Fallback
+        try {
+          if (!mssv) return false;
+          const raw = localStorage.getItem(DB_PRIVATE_ORDERS_KEY);
+          const db = raw ? JSON.parse(raw) : {};
+          if (!Array.isArray(db[mssv])) {
+            db[mssv] = [];
+          }
+          db[mssv].push(orderRecord);
+          localStorage.setItem(DB_PRIVATE_ORDERS_KEY, JSON.stringify(db));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      },
+
+      // Xóa DỮ LIỆU RIÊNG của chính sinh viên đang đăng nhập
+      clearPrivateOrdersByMSSV: async function(mssv) {
+        if (this.isServerConnected && this.token) {
+          try {
+            const res = await fetch(API_BASE + "/api/orders/mine", {
+              method: "DELETE",
+              headers: { "Authorization": "Bearer " + this.token }
+            });
+            const data = await res.json();
+            return data.success;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        // Offline Fallback
+        try {
+          if (!mssv) return false;
+          const raw = localStorage.getItem(DB_PRIVATE_ORDERS_KEY);
+          const db = raw ? JSON.parse(raw) : {};
+          db[mssv] = [];
+          localStorage.setItem(DB_PRIVATE_ORDERS_KEY, JSON.stringify(db));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      },
+
+      // Đọc DỮ LIỆU CHUNG (Cộng đồng)
+      getSharedOrders: async function() {
+        if (this.isServerConnected) {
+          try {
+            const res = await fetch(API_BASE + "/api/orders/community");
+            if (res.ok) {
+              const data = await res.json();
+              return data.orders || [];
+            }
+          } catch (e) {}
+        }
+
+        // Offline Fallback
+        try {
+          const raw = localStorage.getItem(DB_SHARED_ORDERS_KEY);
+          if (raw) {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list) && list.length > 0) return list;
+          }
+          const initial = SAMPLE_SHARED_ORDERS.slice();
+          localStorage.setItem(DB_SHARED_ORDERS_KEY, JSON.stringify(initial));
+          return initial;
+        } catch (e) {
+          return SAMPLE_SHARED_ORDERS.slice();
+        }
+      },
+
+      // Ghi DỮ LIỆU CHUNG (Cộng đồng)
+      saveSharedOrder: async function(orderRecord) {
+        if (this.isServerConnected) {
+          // Trên SQLite Server, đơn hàng đã được tự động lưu vào bảng orders dùng chung
+          return true;
+        }
+
+        // Offline Fallback
+        try {
+          const list = await this.getSharedOrders();
+          list.push(orderRecord);
+          localStorage.setItem(DB_SHARED_ORDERS_KEY, JSON.stringify(list));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+    };
+
+    // =========================================================
+    // II. DỮ LIỆU THỰC ĐƠN 8 MÓN & 10 ĐƠN MẪU CỘNG ĐỒNG
+    // =========================================================
+    let MENU_ITEMS = [
+      {
+        name: "Trà sữa truyền thống",
+        price: "25.000đ",
+        tag: "Bán chạy",
+        bg: "linear-gradient(135deg, #fdf3e7 0%, #f3d5b5 100%)",
+        cupColor: "#d4a373",
+        desc: "Hương vị hồng trà truyền thống hòa quyện cùng sữa béo thơm dịu."
+      },
+      {
+        name: "Trà sữa trân châu đen",
+        price: "30.000đ",
+        tag: "Signature",
+        bg: "linear-gradient(135deg, #faedcd 0%, #e6ccb2 100%)",
+        cupColor: "#b08968",
+        desc: "Trà sữa đậm vị kết hợp trân châu đường đen nấu ấm dẻo mềm."
+      },
+      {
+        name: "Trà sữa matcha",
+        price: "35.000đ",
+        tag: "Yêu thích",
+        bg: "linear-gradient(135deg, #e9f5db 0%, #cfe1b9 100%)",
+        cupColor: "#71a95a",
+        desc: "Bột trà xanh Matcha Nhật Bản thanh mát pha chút sữa tươi béo nhẹ."
+      },
+      {
+        name: "Trà sữa khoai môn",
+        price: "32.000đ",
+        tag: "Thơm bùi",
+        bg: "linear-gradient(135deg, #f3e8ff 0%, #ddd6fe 100%)",
+        cupColor: "#9d7cd8",
+        desc: "Hương khoai môn tím thơm bùi tự nhiên, vị ngọt dịu dễ uống."
+      },
+      {
+        name: "Trà sữa socola",
+        price: "32.000đ",
+        tag: "Đậm đà",
+        bg: "linear-gradient(135deg, #f5ebe0 0%, #d5bdaf 100%)",
+        cupColor: "#7f5539",
+        desc: "Vị socola nguyên chất đậm đà hòa quyện cùng kem sữa mịn màng."
+      },
+      {
+        name: "Hồng trà sữa",
+        price: "28.000đ",
+        tag: "Truyền thống",
+        bg: "linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%)",
+        cupColor: "#c26d38",
+        desc: "Cốt hồng trà ủ lạnh thơm nồng với hậu vị ngọt thanh tao nhã."
+      },
+      {
+        name: "Trà sữa thái xanh",
+        price: "30.000đ",
+        tag: "Thanh mát",
+        bg: "linear-gradient(135deg, #d8f3dc 0%, #b7e4c7 100%)",
+        cupColor: "#40916c",
+        desc: "Hương trà thảo mộc Thái Lan đặc trưng, sắc xanh bắt mắt."
+      },
+      {
+        name: "Trà sữa Oolong",
+        price: "33.000đ",
+        tag: "Cao cấp",
+        bg: "linear-gradient(135deg, #fef9c3 0%, #fde68a 100%)",
+        cupColor: "#d99b26",
+        desc: "Trà Oolong cao sơn rang thơm kết hợp sữa tươi chuẩn vị."
+      }
+    ];
+
+    const SAMPLE_SHARED_ORDERS = [
+      { id: "mau-1", userName: "Nguyễn Minh Anh (20011001)", drink: "Trà sữa trân châu đen", size: "L", sugar: "50%", ice: "ít", note: "Thêm trân châu", time: "08:15 29/10/2026" },
+      { id: "mau-2", userName: "Trần Hoàng Nam (20011002)", drink: "Trà sữa truyền thống", size: "M", sugar: "100%", ice: "bình thường", note: "", time: "08:30 29/10/2026" },
+      { id: "mau-3", userName: "Lê Thu Hà (20011003)", drink: "Trà sữa matcha", size: "L", sugar: "50%", ice: "ít", note: "Ít ngọt", time: "09:05 29/10/2026" },
+      { id: "mau-4", userName: "Phạm Quốc Bảo (20011004)", drink: "Trà sữa Oolong", size: "M", sugar: "0%", ice: "bình thường", note: "Không đường", time: "09:20 29/10/2026" },
+      { id: "mau-5", userName: "Võ Thanh Trúc (20011005)", drink: "Trà sữa khoai môn", size: "M", sugar: "50%", ice: "không", note: "Lấy liền", time: "09:45 29/10/2026" },
+      { id: "mau-6", userName: "Đặng Gia Huy (20011006)", drink: "Trà sữa trân châu đen", size: "L", sugar: "100%", ice: "bình thường", note: "", time: "10:10 29/10/2026" },
+      { id: "mau-7", userName: "Bùi Ngọc Linh (20011007)", drink: "Hồng trà sữa", size: "M", sugar: "50%", ice: "ít", note: "", time: "10:35 29/10/2026" },
+      { id: "mau-8", userName: "Hoàng Văn Kiên (20011008)", drink: "Trà sữa thái xanh", size: "L", sugar: "100%", ice: "bình thường", note: "Đá để riêng", time: "11:00 29/10/2026" },
+      { id: "mau-9", userName: "Đỗ Phương Thảo (20011009)", drink: "Trà sữa socola", size: "M", sugar: "50%", ice: "ít", note: "", time: "11:25 29/10/2026" },
+      { id: "mau-10", userName: "Ngô Tuấn Kiệt (20011010)", drink: "Trà sữa trân châu đen", size: "M", sugar: "50%", ice: "bình thường", note: "", time: "11:50 29/10/2026" }
+    ];
+
+    let currentSelectedDrink = MENU_ITEMS[0];
+
+    // =========================================================
+    // III. HÀM TIỆN ÍCH ESCAPE HTML & THỜI GIAN
+    // =========================================================
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatCurrentTime() {
+      const now = new Date();
+      const pad = function(n) { return n < 10 ? "0" + n : String(n); };
+      return pad(now.getHours()) + ":" + pad(now.getMinutes()) + " " +
+             pad(now.getDate()) + "/" + pad(now.getMonth() + 1) + "/" + now.getFullYear();
+    }
+
+    function generateId(prefix) {
+      return prefix + "_" + Date.now() + "_" + Math.random().toString(36).substring(2, 8);
+    }
+
+    function createCupSvg(cupColor) {
+      return '<svg viewBox="0 0 90 110" width="84" height="102">' +
+        '<line x1="45" y1="4" x2="45" y2="30" stroke="#16329c" stroke-width="5" stroke-linecap="round"/>' +
+        '<path d="M18,28 L72,28 L64,96 C64,101 59,104 54,104 L36,104 C31,104 26,101 26,96 Z" fill="' + cupColor + '" stroke="#16329c" stroke-width="2.5"/>' +
+        '<path d="M18,28 Q45,16 72,28" fill="#ffffff" stroke="#16329c" stroke-width="2.2"/>' +
+        '<rect x="14" y="24" width="62" height="7" rx="3.5" fill="#f7b500" stroke="#16329c" stroke-width="1.5"/>' +
+        '<circle cx="34" cy="91" r="4" fill="#231709"/><circle cx="45" cy="93" r="4" fill="#231709"/><circle cx="56" cy="90" r="4" fill="#231709"/>' +
+        '<circle cx="39" cy="82" r="4" fill="#231709"/><circle cx="51" cy="83" r="4" fill="#231709"/>' +
+      '</svg>';
+    }
+
+    // =========================================================
+    // IV. QUẢN LÝ ĐĂNG NHẬP / ĐĂNG KÝ VÀ TRẠNG THÁI SINH VIÊN
+    // =========================================================
+    function showAuthAlert(msg, type) {
+      const alert = document.getElementById("auth-alert");
+      alert.className = "auth-alert " + (type || "error");
+      alert.textContent = msg;
+    }
+
+    function hideAuthAlert() {
+      const alert = document.getElementById("auth-alert");
+      alert.className = "auth-alert";
+      alert.textContent = "";
+    }
+
+    function clearAllAuthInputs() {
+      const loginForm = document.getElementById("form-login");
+      const regForm = document.getElementById("form-register");
+      if (loginForm) loginForm.reset();
+      if (regForm) regForm.reset();
+
+      const ids = ["login-mssv", "login-password", "reg-mssv", "reg-name", "reg-password"];
+      for (let i = 0; i < ids.length; i++) {
+        const el = document.getElementById(ids[i]);
+        if (el) {
+          el.value = "";
+          el.defaultValue = "";
+          if (document.activeElement === el) {
+            el.blur();
+          }
+        }
+      }
+      hideAuthAlert();
+    }
+
+    async function checkAuthState() {
+      const currentUser = IMT_Database.getCurrentUser();
+      const authPortal = document.getElementById("auth-portal");
+
+      if (currentUser) {
+        authPortal.classList.add("hidden");
+        document.getElementById("topbar-user-name").textContent = currentUser.fullName + " (" + currentUser.mssv + ")";
+        await updateMineBadge();
+        await renderMineTab();
+      } else {
+        clearAllAuthInputs();
+        authPortal.classList.remove("hidden");
+        document.getElementById("topbar-user-name").textContent = "Chưa đăng nhập";
+        await updateMineBadge();
+        await renderMineTab();
+        setTimeout(clearAllAuthInputs, 20);
+      }
+    }
+
+
+
+    // =========================================================
+    // V. HIỂN THỊ CÁC TAB NỘI DUNG
+    // =========================================================
+
+    // Tab 1: Thực đơn chọn món để order
+    function renderMenu(filterKeyword) {
+      const grid = document.getElementById("menu-grid");
+      const keyword = (filterKeyword || "").trim().toLowerCase();
+      const filtered = MENU_ITEMS.filter(function(item) {
+        return !keyword ||
+          item.name.toLowerCase().indexOf(keyword) !== -1 ||
+          item.desc.toLowerCase().indexOf(keyword) !== -1;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">Không tìm thấy món phù hợp</div>';
+        return;
+      }
+
+      let html = "";
+      for (let i = 0; i < filtered.length; i++) {
+        const item = filtered[i];
+        html += '<div class="drink-card">' +
+          '<div class="drink-visual" style="background: ' + item.bg + ';">' +
+            '<span class="drink-tag-badge">' + escapeHtml(item.tag) + '</span>' +
+            '<span class="drink-price-badge">' + escapeHtml(item.price) + '</span>' +
+            createCupSvg(item.cupColor) +
+          '</div>' +
+          '<div class="drink-body">' +
+            '<div>' +
+              '<div class="drink-name">' + escapeHtml(item.name) + '</div>' +
+              '<p class="drink-desc">' + escapeHtml(item.desc) + '</p>' +
+            '</div>' +
+            '<button type="button" class="btn-order-now" data-name="' + escapeHtml(item.name) + '">' +
+              '<span>Chọn món yêu thích (Order)</span>' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }
+      grid.innerHTML = html;
+
+      const btns = grid.querySelectorAll(".btn-order-now");
+      for (let i = 0; i < btns.length; i++) {
+        btns[i].addEventListener("click", function() {
+          const drinkName = this.getAttribute("data-name");
+          openOrderModal(drinkName);
+        });
+      }
+    }
+
+    // Mở Modal Order món cho sinh viên
+    function openOrderModal(drinkName) {
+      const currentUser = IMT_Database.getCurrentUser();
+      if (!currentUser) {
+        checkAuthState();
+        return;
+      }
+
+      const found = MENU_ITEMS.find(function(item) { return item.name === drinkName; }) || MENU_ITEMS[0];
+      currentSelectedDrink = found;
+
+      document.getElementById("modal-drink-name").textContent = found.name;
+      document.getElementById("modal-drink-price").textContent = found.price;
+      document.getElementById("input-user-name").value = currentUser.fullName + " (MSSV: " + currentUser.mssv + ")";
+
+      document.getElementById("select-size").value = "M";
+      document.getElementById("select-sugar").value = "100%";
+      document.getElementById("select-ice").value = "bình thường";
+      document.getElementById("input-note").value = "";
+
+      document.getElementById("order-modal").classList.add("open");
+    }
+
+    function closeOrderModal() {
+      document.getElementById("order-modal").classList.remove("open");
+    }
+
+    // Tab 2: Cộng đồng (dữ liệu chung)
+    async function renderCommunityTab() {
+      const totalEl = document.getElementById("community-total");
+      const topOneEl = document.getElementById("community-top-one");
+      const rankingWrap = document.getElementById("community-ranking-wrap");
+      const tableWrap = document.getElementById("community-table-wrap");
+
+      const orders = await IMT_Database.getSharedOrders();
+
+      if (!orders || orders.length === 0) {
+        totalEl.textContent = "0";
+        topOneEl.textContent = "Chưa có dữ liệu";
+        rankingWrap.innerHTML = '<div class="empty-state">Chưa có dữ liệu</div>';
+        tableWrap.innerHTML = '<div class="empty-state">Chưa có dữ liệu</div>';
+        return;
+      }
+
+      totalEl.textContent = orders.length + " lượt";
+
+      const countMap = {};
+      for (let i = 0; i < orders.length; i++) {
+        const d = orders[i].drink || "Không rõ";
+        countMap[d] = (countMap[d] || 0) + 1;
+      }
+      const ranking = Object.keys(countMap).map(function(d) {
+        return { drink: d, count: countMap[d] };
+      }).sort(function(a, b) {
+        return b.count - a.count;
+      });
+
+      if (ranking.length > 0) {
+        topOneEl.textContent = ranking[0].drink + " (" + ranking[0].count + " lượt)";
+      }
+
+      let rankHtml = '<table><thead><tr><th>Hạng</th><th>Tên món trà sữa</th><th>Số lượt chọn</th></tr></thead><tbody>';
+      for (let i = 0; i < ranking.length; i++) {
+        rankHtml += '<tr>' +
+          '<td><span class="pill-tag pill-gold">#' + (i + 1) + '</span></td>' +
+          '<td><strong>' + escapeHtml(ranking[i].drink) + '</strong></td>' +
+          '<td>' + escapeHtml(ranking[i].count) + ' lượt</td>' +
+        '</tr>';
+      }
+      rankHtml += '</tbody></table>';
+      rankingWrap.innerHTML = rankHtml;
+
+      const reversed = orders.slice().reverse();
+      let listHtml = '<table><thead><tr>' +
+        '<th>STT</th>' +
+        '<th>Sinh viên (MSSV)</th>' +
+        '<th>Món</th>' +
+        '<th>Size</th>' +
+        '<th>Đường</th>' +
+        '<th>Đá</th>' +
+        '<th>Thời gian</th>' +
+      '</tr></thead><tbody>';
+
+      for (let i = 0; i < reversed.length; i++) {
+        const r = reversed[i];
+        listHtml += '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td><strong>' + escapeHtml(r.userName) + '</strong></td>' +
+          '<td>' + escapeHtml(r.drink) + '</td>' +
+          '<td><span class="pill-tag">' + escapeHtml(r.size) + '</span></td>' +
+          '<td>' + escapeHtml(r.sugar) + '</td>' +
+          '<td>' + escapeHtml(r.ice) + '</td>' +
+          '<td>' + escapeHtml(r.time) + '</td>' +
+        '</tr>';
+      }
+      listHtml += '</tbody></table>';
+      tableWrap.innerHTML = listHtml;
+    }
+
+    // Tab 3: Của tôi (Dữ liệu riêng được lọc chính xác theo MSSV trong Database)
+    async function renderMineTab() {
+      const currentUser = IMT_Database.getCurrentUser();
+      const totalEl = document.getElementById("mine-total");
+      const topDrinkEl = document.getElementById("mine-top-drink");
+      const tableWrap = document.getElementById("mine-table-wrap");
+      const titleEl = document.getElementById("mine-table-title");
+
+      if (!currentUser) {
+        totalEl.textContent = "0";
+        topDrinkEl.textContent = "Chưa có dữ liệu";
+        tableWrap.innerHTML = '<div class="empty-state">Vui lòng đăng nhập bằng MSSV để xem dữ liệu riêng của bạn</div>';
+        return;
+      }
+
+      titleEl.textContent = "Lịch sử của sinh viên: " + currentUser.fullName + " (MSSV: " + currentUser.mssv + ")";
+      const myOrders = await IMT_Database.getPrivateOrdersByMSSV(currentUser.mssv);
+      await updateMineBadge();
+
+      if (!myOrders || myOrders.length === 0) {
+        totalEl.textContent = "0";
+        topDrinkEl.textContent = "Chưa có dữ liệu";
+        tableWrap.innerHTML = '<div class="empty-state">Bạn chưa order món trà sữa nào. Hãy chọn món tại Tab 1!</div>';
+        return;
+      }
+
+      totalEl.textContent = myOrders.length + " lần";
+
+      const countMap = {};
+      for (let i = 0; i < myOrders.length; i++) {
+        const d = myOrders[i].drink || "Không rõ";
+        countMap[d] = (countMap[d] || 0) + 1;
+      }
+      let bestDrink = "";
+      let maxCount = 0;
+      const keys = Object.keys(countMap);
+      for (let i = 0; i < keys.length; i++) {
+        if (countMap[keys[i]] > maxCount) {
+          maxCount = countMap[keys[i]];
+          bestDrink = keys[i];
+        }
+      }
+      topDrinkEl.textContent = bestDrink + " (" + maxCount + " lần)";
+
+      const reversed = myOrders.slice().reverse();
+      let html = '<table><thead><tr>' +
+        '<th>STT</th>' +
+        '<th>Món đã order</th>' +
+        '<th>Size</th>' +
+        '<th>Đường</th>' +
+        '<th>Đá</th>' +
+        '<th>Ghi chú</th>' +
+        '<th>Thời gian</th>' +
+      '</tr></thead><tbody>';
+
+      for (let i = 0; i < reversed.length; i++) {
+        const r = reversed[i];
+        html += '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td><strong>' + escapeHtml(r.drink) + '</strong></td>' +
+          '<td><span class="pill-tag">' + escapeHtml(r.size) + '</span></td>' +
+          '<td>' + escapeHtml(r.sugar) + '</td>' +
+          '<td>' + escapeHtml(r.ice) + '</td>' +
+          '<td>' + escapeHtml(r.note || "Không có") + '</td>' +
+          '<td>' + escapeHtml(r.time) + '</td>' +
+        '</tr>';
+      }
+      html += '</tbody></table>';
+      tableWrap.innerHTML = html;
+    }
+
+    async function updateMineBadge() {
+      const badge = document.getElementById("mine-count-badge");
+      if (!badge) return;
+      const currentUser = IMT_Database.getCurrentUser();
+      if (!currentUser) {
+        badge.textContent = "0";
+        return;
+      }
+      const myOrders = await IMT_Database.getPrivateOrdersByMSSV(currentUser.mssv);
+      badge.textContent = String(myOrders ? myOrders.length : 0);
+    }
+
+    // Chuyển tab giao diện
+    function switchTab(targetTabId) {
+      const tabBtns = document.querySelectorAll(".nav-tab-btn");
+      const panels = document.querySelectorAll(".tab-panel");
+
+      for (let i = 0; i < tabBtns.length; i++) {
+        if (tabBtns[i].getAttribute("data-tab") === targetTabId) {
+          tabBtns[i].classList.add("active");
+        } else {
+          tabBtns[i].classList.remove("active");
+        }
+      }
+
+      for (let i = 0; i < panels.length; i++) {
+        if (panels[i].id === targetTabId) {
+          panels[i].classList.add("active");
+        } else {
+          panels[i].classList.remove("active");
+        }
+      }
+
+      if (targetTabId === "tab-community") {
+        renderCommunityTab();
+      } else if (targetTabId === "tab-mine") {
+        renderMineTab();
+      } else if (targetTabId === "tab-menu") {
+        fetchServerProducts().then(() => {
+          const kw = document.getElementById("menu-search") ? document.getElementById("menu-search").value : "";
+          renderMenu(kw);
+        });
+      }
+    }
+
+    // =========================================================
+    // VI. KHỞI TẠO SỰ KIỆN TOÀN TRANG
+    // =========================================================
+    function initEvents() {
+      // Chuyển tab đăng nhập / đăng ký (Xóa sạch toàn bộ lịch sử / dữ liệu đã nhập trước đó)
+      document.getElementById("tab-login-btn").addEventListener("click", function() {
+        this.classList.add("active");
+        document.getElementById("tab-register-btn").classList.remove("active");
+        document.getElementById("form-login").classList.add("active");
+        document.getElementById("form-register").classList.remove("active");
+        clearAllAuthInputs();
+        setTimeout(clearAllAuthInputs, 20);
+      });
+
+      document.getElementById("tab-register-btn").addEventListener("click", function() {
+        this.classList.add("active");
+        document.getElementById("tab-login-btn").classList.remove("active");
+        document.getElementById("form-register").classList.add("active");
+        document.getElementById("form-login").classList.remove("active");
+        clearAllAuthInputs();
+        setTimeout(clearAllAuthInputs, 20);
+      });
+
+      // Xử lý gửi Form Đăng nhập
+      document.getElementById("form-login").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const mssv = document.getElementById("login-mssv").value;
+        const pass = document.getElementById("login-password").value;
+
+        const res = await IMT_Database.loginUser(mssv, pass);
+        if (res.success) {
+          clearAllAuthInputs();
+          await checkAuthState();
+        } else {
+          showAuthAlert(res.message, "error");
+        }
+      });
+
+      // Xử lý gửi Form Đăng ký
+      document.getElementById("form-register").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const mssv = document.getElementById("reg-mssv").value;
+        const name = document.getElementById("reg-name").value;
+        const pass = document.getElementById("reg-password").value;
+
+        if (pass.length < 4) {
+          showAuthAlert("Mật khẩu phải có tối thiểu 4 ký tự.", "error");
+          return;
+        }
+
+        const res = await IMT_Database.registerUser(mssv, pass, name);
+        if (res.success) {
+          clearAllAuthInputs();
+          await checkAuthState();
+        } else {
+          showAuthAlert(res.message, "error");
+        }
+      });
+
+      // Đăng xuất: Xóa hoàn toàn session và xóa sạch dữ liệu/lịch sử nhập ở form popup
+      document.getElementById("btn-logout").addEventListener("click", async function() {
+        if (window.confirm("Bạn có muốn đăng xuất khỏi tài khoản sinh viên này không?")) {
+          await IMT_Database.logout();
+          clearAllAuthInputs();
+          // Mặc định mở lại tab đăng nhập sạch sẽ
+          document.getElementById("tab-login-btn").classList.add("active");
+          document.getElementById("tab-register-btn").classList.remove("active");
+          document.getElementById("form-login").classList.add("active");
+          document.getElementById("form-register").classList.remove("active");
+          await checkAuthState();
+          setTimeout(clearAllAuthInputs, 20);
+          setTimeout(clearAllAuthInputs, 80);
+        }
+      });
+
+      // Chuyển tab menu chính
+      const tabBtns = document.querySelectorAll(".nav-tab-btn");
+      for (let i = 0; i < tabBtns.length; i++) {
+        tabBtns[i].addEventListener("click", function() {
+          switchTab(this.getAttribute("data-tab"));
+        });
+      }
+
+      const quickSwitchLinks = document.querySelectorAll("[data-switch-tab]");
+      for (let i = 0; i < quickSwitchLinks.length; i++) {
+        quickSwitchLinks[i].addEventListener("click", function() {
+          switchTab(this.getAttribute("data-switch-tab"));
+        });
+      }
+
+      // =======================================================
+      // ĐIỀU KHIỂN HERO BANNER SLIDER (TỰ ĐỘNG LƯỚT SAU 5 GIÂY)
+      // =======================================================
+      let currentHeroSlide = 0;
+      let heroSlideTimer = null;
+      const heroSlides = document.querySelectorAll(".hero-slide");
+      const heroDots = document.querySelectorAll("#hero-dots-container .hero-dot");
+      const totalHeroSlides = heroSlides.length;
+
+      function goToHeroSlide(index) {
+        if (!totalHeroSlides) return;
+        currentHeroSlide = (index + totalHeroSlides) % totalHeroSlides;
+
+        const track = document.getElementById("hero-slider-track");
+        if (track) {
+          track.style.transform = "translateX(-" + (currentHeroSlide * 25) + "%)";
+        }
+
+        for (let i = 0; i < heroSlides.length; i++) {
+          if (i === currentHeroSlide) {
+            heroSlides[i].classList.add("active");
+          } else {
+            heroSlides[i].classList.remove("active");
+          }
+        }
+
+        for (let i = 0; i < heroDots.length; i++) {
+          if (i === currentHeroSlide) {
+            heroDots[i].classList.add("active");
+          } else {
+            heroDots[i].classList.remove("active");
+          }
+        }
+      }
+
+      // Khởi động đồng hồ tự động lướt slide liên tục sau mỗi 5 giây
+      function resetHeroAutoSlide() {
+        if (heroSlideTimer) {
+          clearInterval(heroSlideTimer);
+        }
+        heroSlideTimer = setInterval(function() {
+          goToHeroSlide(currentHeroSlide + 1);
+        }, 5000);
+      }
+
+      const prevBtn = document.getElementById("hero-prev-btn");
+      if (prevBtn) {
+        prevBtn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          goToHeroSlide(currentHeroSlide - 1);
+          resetHeroAutoSlide();
+        });
+      }
+
+      const nextBtn = document.getElementById("hero-next-btn");
+      if (nextBtn) {
+        nextBtn.addEventListener("click", function(e) {
+          e.stopPropagation();
+          goToHeroSlide(currentHeroSlide + 1);
+          resetHeroAutoSlide();
+        });
+      }
+
+      for (let i = 0; i < heroDots.length; i++) {
+        heroDots[i].addEventListener("click", function(e) {
+          e.stopPropagation();
+          const targetIdx = parseInt(this.getAttribute("data-slide-target"), 10);
+          goToHeroSlide(targetIdx);
+          resetHeroAutoSlide();
+        });
+      }
+
+      // Khởi chạy slide đầu tiên và kích hoạt tự động lướt mỗi 5s
+      goToHeroSlide(0);
+      resetHeroAutoSlide();
+
+      // Bấm vào bất kỳ thẻ Deal nào trên banner cuộn xuống Menu
+      const dealCards = document.querySelectorAll(".hero-deal-card");
+      for (let i = 0; i < dealCards.length; i++) {
+        dealCards[i].addEventListener("click", function() {
+          switchTab("tab-menu");
+          document.getElementById("menu-grid").scrollIntoView({ behavior: "smooth" });
+        });
+      }
+
+      document.getElementById("menu-search").addEventListener("input", function() {
+        renderMenu(this.value);
+      });
+
+      // Đóng modal đặt món
+      document.getElementById("btn-close-modal").addEventListener("click", closeOrderModal);
+      document.getElementById("btn-cancel-modal").addEventListener("click", closeOrderModal);
+      document.getElementById("order-modal").addEventListener("click", function(e) {
+        if (e.target === this) closeOrderModal();
+      });
+
+      // Gửi Form Order: Lưu đồng thời vào Database chung và Database riêng của MSSV
+      document.getElementById("order-form").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const currentUser = IMT_Database.getCurrentUser();
+        if (!currentUser) {
+          alert("Vui lòng đăng nhập trước khi order!");
+          await checkAuthState();
+          return;
+        }
+
+        const recordId = generateId("order");
+        const orderTime = formatCurrentTime();
+        const sizeVal = document.getElementById("select-size").value;
+        const sugarVal = document.getElementById("select-sugar").value;
+        const iceVal = document.getElementById("select-ice").value;
+        const noteVal = document.getElementById("input-note").value.trim();
+
+        // Bản ghi dữ liệu riêng cho sinh viên
+        const privateRecord = {
+          id: recordId,
+          drink: currentSelectedDrink.name,
+          size: sizeVal,
+          sugar: sugarVal,
+          ice: iceVal,
+          note: noteVal,
+          time: orderTime
+        };
+
+        // Bản ghi dữ liệu chung cộng đồng
+        const sharedRecord = {
+          id: recordId,
+          userName: currentUser.fullName + " (" + currentUser.mssv + ")",
+          drink: currentSelectedDrink.name,
+          size: sizeVal,
+          sugar: sugarVal,
+          ice: iceVal,
+          note: noteVal,
+          time: orderTime
+        };
+
+        // 1. Lưu vào Database riêng của sinh viên theo MSSV
+        await IMT_Database.savePrivateOrderByMSSV(currentUser.mssv, privateRecord);
+
+        // 2. Lưu vào Database chung cộng đồng
+        await IMT_Database.saveSharedOrder(sharedRecord);
+
+        closeOrderModal();
+        await updateMineBadge();
+        await renderMineTab();
+
+        const toast = document.getElementById("order-toast");
+        const toastText = document.getElementById("order-toast-text");
+        toastText.textContent = "Đã lưu đơn của sinh viên " + currentUser.fullName + ": " + privateRecord.drink + " (Size " + sizeVal + ", " + sugarVal + " đường, " + iceVal + " đá) vào SQLite!";
+        toast.style.display = "flex";
+      });
+
+      document.getElementById("btn-view-my-orders").addEventListener("click", function() {
+        switchTab("tab-mine");
+      });
+
+      document.getElementById("btn-reload-community").addEventListener("click", function() {
+        renderCommunityTab();
+      });
+
+      // Xóa lịch sử riêng của sinh viên đang đăng nhập
+      document.getElementById("btn-clear-mine").addEventListener("click", async function() {
+        const currentUser = IMT_Database.getCurrentUser();
+        if (!currentUser) return;
+        const myOrders = await IMT_Database.getPrivateOrdersByMSSV(currentUser.mssv);
+        if (!myOrders || myOrders.length === 0) {
+          alert("Lịch sử của bạn hiện đang trống.");
+          return;
+        }
+        if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử order của riêng tài khoản MSSV: " + currentUser.mssv + " trong CSDL SQLite không?")) {
+          await IMT_Database.clearPrivateOrdersByMSSV(currentUser.mssv);
+          await renderMineTab();
+          await updateMineBadge();
+        }
+      });
+
+      document.getElementById("btn-scroll-top").addEventListener("click", function() {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    async function fetchServerProducts() {
+      try {
+        const res = await fetch(API_BASE + '/api/products');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.products && data.products.length > 0) {
+            MENU_ITEMS = data.products;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // Khởi chạy ứng dụng
+    (async function initApp() {
+      await IMT_Database.init();
+      await fetchServerProducts();
+      renderMenu("");
+      initEvents();
+      await checkAuthState();
+    })();
+  </script>
+</body>
+</html>
